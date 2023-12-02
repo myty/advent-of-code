@@ -88,17 +88,19 @@ if (import.meta.main) {
 }
 
 const TEST_INPUT = `\
-6
-7
-8
-9
-10
+two1nine
+eightwothree3
+abcone2threexyz
+xtwone3four
+4nineeightseven2
+zoneight234
+7pqrstsixteen
 `;
 
 Deno.test("part1", () => {
-  assertEquals(part1(TEST_INPUT), 11);
+  assertEquals(part1(TEST_INPUT), 242);
 });
 
 Deno.test("part2", () => {
-  assertEquals(part2(TEST_INPUT), 12);
+  assertEquals(part2(TEST_INPUT), 281);
 });
