@@ -8,6 +8,6 @@ jobs:
       - uses: denoland/setup-deno@v1
         with:
           deno-version: v1.x
-      - run: deno fmt --check
-      - run: deno lint
+      - run: cd 2023 && deno fmt --check
+      - run: cd 2023 && deno lint
       - run: cd 2023 && deno task test
