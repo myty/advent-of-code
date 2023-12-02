@@ -1,4 +1,4 @@
-name: tests
+name: 2023 tests
 on: [push]
 jobs:
   tests:
@@ -10,4 +10,4 @@ jobs:
           deno-version: v1.x
       - run: deno fmt --check
       - run: deno lint
-      - run: deno task test
+      - run: cd 2023 && deno task test
