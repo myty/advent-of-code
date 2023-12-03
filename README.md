@@ -15,4 +15,4 @@ do that is to run `deno run -A npm:husky install`
 ## 2023
 
 For 2023, I am solving the puzzles in [Deno](https://deno.com/). See my
-[solutions](./2023/). They ma not be pretty, but they work.
+[solutions](./2023/). They may not be pretty, but they work.
