@@ -9,9 +9,10 @@ coursework, practice problems, a speed contest, or to challenge each other.
 
 ## Getting Started
 
-For the pre-commit hooks to work, you will need to install Husky.  An easy way to do that is to run `deno run -A npm:husky install`
+For the pre-commit hooks to work, you will need to install Husky. An easy way to
+do that is to run `deno run -A npm:husky install`
 
 ## 2023
 
 For 2023, I am solving the puzzles in [Deno](https://deno.com/). See my
-[solutions](./2023/).
+[solutions](./2023/). They ma not be pretty, but they work.
