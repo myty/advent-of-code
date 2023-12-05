@@ -22,20 +22,25 @@ function parseLine(line: string): Card | undefined {
   );
   const winningNumbers = cardNumbers.filter((n) => playerNumbers.includes(n));
 
+  const [cardId] = id.split(" ").reverse();
+
   return {
-    id: Number(id.split(" ")[1]),
+    id: Number(cardId),
     cardNumbers,
     playerNumbers,
     winningNumbers,
   };
 }
 
-function byIsNotUndefined<T>(value: T | undefined): value is T {
-  return value !== undefined;
+function byIsDefined<T>(value: T | undefined | null): value is T {
+  return value != null;
 }
 
 function parse(input: string) {
-  return input.trimEnd().split("\n").map(parseLine).filter(byIsNotUndefined);
+  return input.trimEnd().split("\n").map(parseLine).filter(byIsDefined).sort((
+    a,
+    b,
+  ) => a.id - b.id);
 }
 
 function part1(input: string): number {
@@ -59,33 +64,36 @@ function part1(input: string): number {
   return winningTotal;
 }
 
-function part2(input: string): number {
-  const cardStore = new Map<number, { card: Card; count: number }>();
-  const cards = parse(input);
-  for (const card of cards) {
-    cardStore.set(card.id, { card, count: 1 });
-  }
+const cardStore = new Map<number, { card: Card; count: number }>();
 
-  for (const cardId of cardStore.keys()) {
-    const card = cardStore.get(cardId);
-    if (!card) {
+function redeemCard(card: Card) {
+  const { winningNumbers, id } = card;
+
+  const foundCard = cardStore.get(id) ?? { card, count: 0 };
+  cardStore.set(id, {
+    ...foundCard,
+    count: foundCard.count + 1,
+  });
+
+  for (let i = 1; i <= winningNumbers.length; i++) {
+    const redeemableCard = cardStore.get(id + i);
+    if (!redeemableCard) {
       continue;
     }
 
-    const { winningNumbers } = card.card;
-    for (let c = 0; c < card.count; c++) {
-      for (let i = 0; i < winningNumbers.length; i++) {
-        const card = cardStore.get(cardId + i + 1);
-        if (!card) {
-          continue;
-        }
+    redeemCard(redeemableCard.card);
+  }
+}
 
-        cardStore.set(card.card.id, {
-          ...card,
-          count: card.count + 1,
-        });
-      }
-    }
+function part2(input: string): number {
+  const cards = parse(input).map((card, i) => {
+    return {
+      ...card,
+      id: i + 1,
+    };
+  }).reverse();
+  for (const card of cards) {
+    redeemCard(card);
   }
 
   let totalCardCount = 0;
