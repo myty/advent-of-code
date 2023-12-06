@@ -12,19 +12,48 @@ type PlantingAttribute =
   | "location";
 
 class SourceDestinationMapper {
-  private readonly maps: [
+  public readonly maps: [
     destinationStart: number,
     sourceStart: number,
     range: number,
   ][] = [];
 
   constructor(
-    private readonly sourceAttribute: PlantingAttribute,
-    private readonly destinationAttribute: PlantingAttribute,
+    public readonly sourceAttribute: PlantingAttribute,
+    public readonly destinationAttribute: PlantingAttribute,
   ) {}
 
   addRange(destinationStart: number, sourceStart: number, range: number): void {
     this.maps.push([destinationStart, sourceStart, range]);
+    this.maps.sort(([a], [b]) => a - b);
+  }
+
+  getSource(
+    destinationAttribute: PlantingAttribute,
+    destination: number,
+  ) {
+    if (destinationAttribute !== this.destinationAttribute) {
+      return {};
+    }
+
+    const map = this.maps.find((
+      [mappedDestination, mappedRange],
+    ) =>
+      (destination >= mappedDestination) && (destination < mappedDestination +
+          mappedRange)
+    );
+
+    if (map == null) {
+      return { attribute: this.sourceAttribute };
+    }
+
+    const [mappedDestination, mappedSource] = map;
+    const offset = destination - mappedDestination;
+
+    return {
+      id: mappedSource + offset,
+      attribute: this.sourceAttribute,
+    };
   }
 
   getDestination(
@@ -43,20 +72,20 @@ class SourceDestinationMapper {
       return { id: source, attribute: this.destinationAttribute };
     }
 
-    const [destinationStart, sourceStart] = map;
-    const offset = source - sourceStart;
+    const [mappedDestination, mappedSource] = map;
+    const offset = source - mappedSource;
 
     return {
-      id: destinationStart + offset,
+      id: mappedDestination + offset,
       attribute: this.destinationAttribute,
     };
   }
 }
 
-const seedLine: number[] = [];
-const sourceDestinationMappers: SourceDestinationMapper[] = [];
+let seedLine: number[] = [];
+let sourceDestinationMappers: SourceDestinationMapper[] = [];
 
-function getSeedMap(
+function getSourceToDestinationSeedMap(
   attribute: PlantingAttribute,
   id: number,
 ): Partial<Record<PlantingAttribute, number>> {
@@ -69,13 +98,73 @@ function getSeedMap(
         return acc;
       }
 
-      return { ...acc, [attribute]: id, ...getSeedMap(attribute, id) };
+      return {
+        ...acc,
+        [attribute]: id,
+        ...getSourceToDestinationSeedMap(attribute, id),
+      };
     }, {} as Partial<Record<PlantingAttribute, number>>);
 
   return sourceDestinationMap;
 }
 
+function isDestinationReachable(
+  attribute: PlantingAttribute,
+  id: number,
+): boolean {
+  const mappers = sourceDestinationMappers
+    .map((m) => m.getSource(attribute, id))
+    .filter((m) => m?.attribute != null)
+    .reduce((acc, result) => {
+      const { id, attribute } = result;
+
+      if (
+        !attribute || acc.some((m) => m.attribute === attribute && m.id === id)
+      ) {
+        return acc;
+      }
+
+      return [
+        ...acc,
+        result,
+      ];
+    }, [] as { attribute?: PlantingAttribute; id?: number }[]);
+
+  for (const mapper of mappers) {
+    if (mapper?.attribute === "seed" && isValidSeedId(mapper.id)) {
+      return true;
+    }
+
+    if (mapper?.attribute == null) {
+      continue;
+    }
+
+    return isDestinationReachable(mapper.attribute, mapper.id ?? id);
+  }
+
+  return false;
+}
+
+function isValidSeedId(id?: number) {
+  if (id == null) {
+    return false;
+  }
+
+  for (let i = 0; i < seedLine.length; i += 2) {
+    const rangeStart = seedLine[i];
+    const rangeEnd = rangeStart + seedLine[i + 1] - 1;
+    if (id >= rangeStart && id <= rangeEnd) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 function parse(input: string) {
+  seedLine = [];
+  sourceDestinationMappers = [];
+
   let currentSourceMappper: SourceDestinationMapper | undefined;
 
   for (const line of input.trimEnd().split("\n")) {
@@ -120,7 +209,7 @@ function part1(input: string): number {
   let lowestLocation = Infinity;
 
   for (const id of seedLine) {
-    const { location } = getSeedMap("seed", id);
+    const { location } = getSourceToDestinationSeedMap("seed", id);
 
     if (location == null) {
       continue;
@@ -137,26 +226,14 @@ function part1(input: string): number {
 function part2(input: string): number {
   parse(input);
 
-  let lowestLocation = Infinity;
-
-  for (let i = 0; i < seedLine.length; i = i + 2) {
-    const start = seedLine[i];
-    const range = seedLine[i + 1];
-
-    for (let j = 0; j < range; j++) {
-      const { location } = getSeedMap("seed", start + j);
-
-      if (location == null) {
-        continue;
-      }
-
-      if (location < lowestLocation) {
-        lowestLocation = location;
-      }
+  let location = 0;
+  while (true) {
+    if (isDestinationReachable("location", location++)) {
+      break;
     }
   }
 
-  return lowestLocation;
+  return location;
 }
 
 if (import.meta.main) {
