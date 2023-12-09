@@ -18,6 +18,11 @@ class SourceDestinationMapper {
     range: number,
   ][] = [];
 
+  private sourceCache: Record<
+    number,
+    { id?: number; attribute?: PlantingAttribute }
+  > = {};
+
   constructor(
     public readonly sourceAttribute: PlantingAttribute,
     public readonly destinationAttribute: PlantingAttribute,
@@ -36,8 +41,13 @@ class SourceDestinationMapper {
       return {};
     }
 
+    const cachedValue = this.sourceCache[destination];
+    if (cachedValue != null) {
+      return cachedValue;
+    }
+
     const map = this.maps.find((
-      [mappedDestination, mappedRange],
+      [mappedDestination, , mappedRange],
     ) =>
       (destination >= mappedDestination) && (destination < mappedDestination +
           mappedRange)
@@ -50,10 +60,14 @@ class SourceDestinationMapper {
     const [mappedDestination, mappedSource] = map;
     const offset = destination - mappedDestination;
 
-    return {
+    const result = {
       id: mappedSource + offset,
       attribute: this.sourceAttribute,
     };
+
+    this.sourceCache[destination] = result;
+
+    return result;
   }
 
   getDestination(
@@ -223,17 +237,51 @@ function part1(input: string): number {
   return lowestLocation;
 }
 
+function findReachableId(
+  startingId: number,
+  precision: number,
+): { maxUnreachableId: number; minReachableId: number } {
+  let unreachableLocation = startingId;
+  let location = startingId;
+
+  while (true) {
+    if (isDestinationReachable("location", location) || location) {
+      break;
+    }
+
+    unreachableLocation = location;
+    location += precision;
+  }
+
+  return { maxUnreachableId: unreachableLocation, minReachableId: location };
+}
+
 function part2(input: string): number {
   parse(input);
 
-  let location = 0;
-  while (true) {
-    if (isDestinationReachable("location", location++)) {
-      break;
-    }
-  }
+  let increasePrecision = true;
+  let precision = 1;
+  let startingId = 0;
 
-  return location;
+  while (true) {
+    const { maxUnreachableId, minReachableId } = findReachableId(
+      startingId,
+      precision,
+    );
+
+    console.log({ maxUnreachableId, minReachableId, precision });
+
+    if (precision === 1) {
+      return minReachableId;
+    }
+
+    if (increasePrecision && minReachableId != null) {
+      increasePrecision = false;
+    }
+
+    startingId = maxUnreachableId;
+    precision = increasePrecision ? precision * 10 : precision / 10;
+  }
 }
 
 if (import.meta.main) {
@@ -281,6 +329,6 @@ Deno.test("part1", () => {
   assertEquals(part1(TEST_INPUT), 35);
 });
 
-// Deno.test("part2", () => {
-//   assertEquals(part2(TEST_INPUT), 46);
-// });
+Deno.test("part2", () => {
+  assertEquals(part2(TEST_INPUT), 46);
+});
