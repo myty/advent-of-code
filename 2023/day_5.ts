@@ -217,26 +217,6 @@ function parse(input: string) {
   }
 }
 
-function part1(input: string): number {
-  parse(input);
-
-  let lowestLocation = Infinity;
-
-  for (const id of seedLine) {
-    const { location } = getSourceToDestinationSeedMap("seed", id);
-
-    if (location == null) {
-      continue;
-    }
-
-    if (location < lowestLocation) {
-      lowestLocation = location;
-    }
-  }
-
-  return lowestLocation;
-}
-
 function findReachableId(
   startingId: number,
   precision: number,
@@ -261,6 +241,26 @@ function findReachableId(
     maxUnreachableId: unreachableLocation - precision,
     minReachableId: location,
   };
+}
+
+function part1(input: string): number {
+  parse(input);
+
+  let lowestLocation = Infinity;
+
+  for (const id of seedLine) {
+    const { location } = getSourceToDestinationSeedMap("seed", id);
+
+    if (location == null) {
+      continue;
+    }
+
+    if (location < lowestLocation) {
+      lowestLocation = location;
+    }
+  }
+
+  return lowestLocation;
 }
 
 function part2(input: string): number {
