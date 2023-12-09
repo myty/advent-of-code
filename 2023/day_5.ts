@@ -240,20 +240,27 @@ function part1(input: string): number {
 function findReachableId(
   startingId: number,
   precision: number,
-): { maxUnreachableId: number; minReachableId: number } {
+): { maxUnreachableId: number; minReachableId?: number } {
   let unreachableLocation = startingId;
   let location = startingId;
 
   while (true) {
-    if (isDestinationReachable("location", location) || location) {
+    if (isDestinationReachable("location", location)) {
       break;
+    }
+
+    if (`${location}`.length > `${unreachableLocation}`.length) {
+      return { maxUnreachableId: unreachableLocation };
     }
 
     unreachableLocation = location;
     location += precision;
   }
 
-  return { maxUnreachableId: unreachableLocation, minReachableId: location };
+  return {
+    maxUnreachableId: unreachableLocation - precision,
+    minReachableId: location,
+  };
 }
 
 function part2(input: string): number {
@@ -269,9 +276,7 @@ function part2(input: string): number {
       precision,
     );
 
-    console.log({ maxUnreachableId, minReachableId, precision });
-
-    if (precision === 1) {
+    if (precision === 1 && minReachableId != null) {
       return minReachableId;
     }
 
@@ -279,8 +284,8 @@ function part2(input: string): number {
       increasePrecision = false;
     }
 
-    startingId = maxUnreachableId;
     precision = increasePrecision ? precision * 10 : precision / 10;
+    startingId = increasePrecision ? precision : maxUnreachableId;
   }
 }
 
