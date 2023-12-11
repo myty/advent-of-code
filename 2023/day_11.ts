@@ -9,16 +9,24 @@ class Galaxy {
   ) {}
 }
 
+class Cell {
+  constructor(
+    public readonly row: number,
+    public readonly column: number,
+    public readonly value: string,
+  ) {}
+}
+
 class Universe {
   public readonly galaxies: Galaxy[] = [];
 
-  private constructor(public readonly grid: string[][]) {
+  private constructor(private readonly grid: Cell[][]) {
     for (let rowIndex = 0; rowIndex < grid.length; rowIndex++) {
       const row = grid[rowIndex];
       for (let columnIndex = 0; columnIndex < row.length; columnIndex++) {
         const cell = row[columnIndex];
-        if (cell !== ".") {
-          this.galaxies.push(new Galaxy(cell, rowIndex, columnIndex));
+        if (cell.value !== ".") {
+          this.galaxies.push(new Galaxy(cell.value, cell.row, cell.column));
         }
       }
     }
@@ -38,7 +46,9 @@ class Universe {
       for (let j = i + 1; j < this.galaxies.length; j++) {
         const to = this.galaxies[j];
 
-        const distance = this.calculateDistance(from, to);
+        const distance = Math.abs(from.row - to.row) +
+          Math.abs(from.column - to.column);
+
         allPaths.push({ from, to, distance });
         allPaths.push({ from: to, to: from, distance });
       }
@@ -60,92 +70,67 @@ class Universe {
     return allPaths;
   }
 
-  calculateDistance(from: Galaxy, to: Galaxy): number {
-    const distance = Math.abs(from.row - to.row) +
-      Math.abs(from.column - to.column);
-    return distance;
-  }
-
   public toString() {
-    return this.grid.map((row) => row.join("")).join("\n");
+    return this.grid.map((row) => row.map((cell) => cell.value).join("")).join(
+      "\n",
+    );
   }
 
-  static parse(input: string, expansionFactor = 2) {
+  static parse(input: string, expansionFactor = 1) {
     const rows = input.trimEnd().split("\n").map((line) => line.split(""));
-    const numericGalaxiesGrid = this.identifyGalaxyNumbers(
+
+    const cells = this.toCells(
       rows,
-    );
-    const expandedRowsAndColumns = this.expandRowsAndColumns(
-      numericGalaxiesGrid,
       expansionFactor,
     );
 
-    return new Universe(expandedRowsAndColumns);
+    return new Universe(cells);
   }
 
-  private static identifyGalaxyNumbers(grid: string[][]): string[][] {
-    const numericGalaxiesGrid: string[][] = [...grid.map((row) => [...row])];
+  static toCells(rows: string[][], expansionFactor: number): Cell[][] {
+    const cells: Cell[][] = [];
 
-    const galaxies = grid.flatMap((row, rowIndex) => {
-      return row
-        .map((cell, columnIndex) => {
-          if (cell === "#") {
-            return { row: rowIndex, column: columnIndex };
-          }
+    const emptyRowIndexes = rows
+      .map((value, i) => ({ value, i }))
+      .filter((row) => row.value.every((cell) => cell === "."))
+      .map(({ i }) => i);
 
-          return undefined;
-        })
-        .filter((cell): cell is { row: number; column: number } =>
-          cell !== undefined
+    const emptyColumnIndexes = this
+      .flipRowsAndColumns(rows)
+      .map((value, i) => ({ value, i }))
+      .filter((row) => row.value.every((cell) => cell === "."))
+      .map(({ i }) => i);
+
+    let currentGalaxyId = 1;
+    let addToRowIndex = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+
+      let addToColumnIndex = 0;
+      for (let j = 0; j < row.length; j++) {
+        const value = row[j];
+
+        if (!cells[i]) {
+          cells[i] = [];
+        }
+
+        cells[i][j] = new Cell(
+          addToRowIndex + i,
+          addToColumnIndex + j,
+          value === "#" ? `${currentGalaxyId++}` : value,
         );
-    });
 
-    for (let i = 1; i <= galaxies.length; i++) {
-      const { row, column } = galaxies[i - 1];
-      numericGalaxiesGrid[row][column] = `${i}`;
-    }
+        if (emptyColumnIndexes.includes(j)) {
+          addToColumnIndex += expansionFactor - 1;
+        }
+      }
 
-    return numericGalaxiesGrid;
-  }
-
-  private static expandRowsAndColumns(
-    rows: string[][],
-    expansionFactor: number,
-  ): string[][] {
-    const expandedRows = this.expandRows(rows, expansionFactor);
-    const expandedRowsAndColumns = this.expandColumns(
-      expandedRows,
-      expansionFactor,
-    );
-    return expandedRowsAndColumns;
-  }
-
-  private static expandRows(
-    rows: string[][],
-    expansionFactor: number,
-  ): string[][] {
-    const grid: string[][] = [];
-
-    for (const row of rows) {
-      grid.push(row);
-
-      if (row.every((cell) => cell === ".")) {
-        Array.from({ length: expansionFactor - 1 }).forEach(() => {
-          grid.push(row);
-        });
+      if (emptyRowIndexes.includes(i)) {
+        addToRowIndex += expansionFactor - 1;
       }
     }
 
-    return grid;
-  }
-
-  private static expandColumns(
-    rows: string[][],
-    expansionFactor: number,
-  ): string[][] {
-    const flippedRows = this.flipRowsAndColumns(rows);
-    const expandedFlippedRows = this.expandRows(flippedRows, expansionFactor);
-    return this.flipRowsAndColumns(expandedFlippedRows);
+    return cells;
   }
 
   private static flipRowsAndColumns(rows: string[][]): string[][] {
@@ -165,11 +150,11 @@ class Universe {
 }
 
 function part1(input: string): number {
-  const universe = Universe.parse(input);
+  const universe = Universe.parse(input, 2);
 
   // console.log(universe.toString());
   // console.log(universe.galaxies);
-  // console.log(universe.calculateShortestPaths());
+  // console.log(universe.calculateDistances());
 
   const sumOfShortestPaths = universe.calculateDistances().reduce(
     (sum, path) => sum + path.distance,
@@ -180,7 +165,7 @@ function part1(input: string): number {
 }
 
 function part2(input: string): number {
-  const universe = Universe.parse(input, 100);
+  const universe = Universe.parse(input, 1000000);
 
   const sumOfShortestPaths = universe.calculateDistances().reduce(
     (sum, path) => sum + path.distance,
@@ -213,5 +198,5 @@ Deno.test("part1", () => {
 });
 
 Deno.test("part2", () => {
-  assertEquals(part2(TEST_INPUT), 8410);
+  assertEquals(part2(TEST_INPUT), 82000210);
 });
