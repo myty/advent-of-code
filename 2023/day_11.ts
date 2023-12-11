@@ -24,7 +24,7 @@ class Universe {
     }
   }
 
-  public calculateShortestPaths(): {
+  public calculateDistances(): {
     from: Galaxy;
     to: Galaxy;
     distance: number;
@@ -70,14 +70,17 @@ class Universe {
     return this.grid.map((row) => row.join("")).join("\n");
   }
 
-  static parse(input: string) {
+  static parse(input: string, expansionFactor = 2) {
     const rows = input.trimEnd().split("\n").map((line) => line.split(""));
-    const expandedRowsAndColumns = this.expandRowsAndColumns(rows);
     const numericGalaxiesGrid = this.identifyGalaxyNumbers(
-      expandedRowsAndColumns,
+      rows,
+    );
+    const expandedRowsAndColumns = this.expandRowsAndColumns(
+      numericGalaxiesGrid,
+      expansionFactor,
     );
 
-    return new Universe(numericGalaxiesGrid);
+    return new Universe(expandedRowsAndColumns);
   }
 
   private static identifyGalaxyNumbers(grid: string[][]): string[][] {
@@ -105,29 +108,43 @@ class Universe {
     return numericGalaxiesGrid;
   }
 
-  private static expandRowsAndColumns(rows: string[][]): string[][] {
-    const expandedRows = this.expandRows(rows);
-    const expandedRowsAndColumns = this.expandColumns(expandedRows);
+  private static expandRowsAndColumns(
+    rows: string[][],
+    expansionFactor: number,
+  ): string[][] {
+    const expandedRows = this.expandRows(rows, expansionFactor);
+    const expandedRowsAndColumns = this.expandColumns(
+      expandedRows,
+      expansionFactor,
+    );
     return expandedRowsAndColumns;
   }
 
-  private static expandRows(rows: string[][]): string[][] {
+  private static expandRows(
+    rows: string[][],
+    expansionFactor: number,
+  ): string[][] {
     const grid: string[][] = [];
 
     for (const row of rows) {
       grid.push(row);
 
       if (row.every((cell) => cell === ".")) {
-        grid.push(row);
+        Array.from({ length: expansionFactor - 1 }).forEach(() => {
+          grid.push(row);
+        });
       }
     }
 
     return grid;
   }
 
-  private static expandColumns(rows: string[][]): string[][] {
+  private static expandColumns(
+    rows: string[][],
+    expansionFactor: number,
+  ): string[][] {
     const flippedRows = this.flipRowsAndColumns(rows);
-    const expandedFlippedRows = this.expandRows(flippedRows);
+    const expandedFlippedRows = this.expandRows(flippedRows, expansionFactor);
     return this.flipRowsAndColumns(expandedFlippedRows);
   }
 
@@ -154,7 +171,7 @@ function part1(input: string): number {
   // console.log(universe.galaxies);
   // console.log(universe.calculateShortestPaths());
 
-  const sumOfShortestPaths = universe.calculateShortestPaths().reduce(
+  const sumOfShortestPaths = universe.calculateDistances().reduce(
     (sum, path) => sum + path.distance,
     0,
   );
@@ -162,14 +179,20 @@ function part1(input: string): number {
   return sumOfShortestPaths / 2;
 }
 
-// function part2(input: string): number {
-//   const items = parse(input);
-//   throw new Error("TODO");
-// }
+function part2(input: string): number {
+  const universe = Universe.parse(input, 100);
+
+  const sumOfShortestPaths = universe.calculateDistances().reduce(
+    (sum, path) => sum + path.distance,
+    0,
+  );
+
+  return sumOfShortestPaths / 2;
+}
 
 if (import.meta.main) {
   runPart(2023, 11, 1, part1);
-  // runPart(2023, 11, 2, part2);
+  runPart(2023, 11, 2, part2);
 }
 
 const TEST_INPUT = `\
@@ -189,6 +212,6 @@ Deno.test("part1", () => {
   assertEquals(part1(TEST_INPUT), 374);
 });
 
-// Deno.test("part2", () => {
-//   assertEquals(part2(TEST_INPUT), 12);
-// });
+Deno.test("part2", () => {
+  assertEquals(part2(TEST_INPUT), 8410);
+});
