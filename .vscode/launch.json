@@ -23,6 +23,26 @@
       "runtimeExecutable": "deno",
       "runtimeArgs": ["test", "--inspect-wait"],
       "attachSimplePort": 9229
+    },
+    {
+      "request": "launch",
+      "name": "(2024) Debug Current File",
+      "type": "node",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}/2024",
+      "runtimeExecutable": "deno",
+      "runtimeArgs": ["run", "--inspect-wait", "--allow-all"],
+      "attachSimplePort": 9229
+    },
+    {
+      "request": "launch",
+      "name": "(2024) Debug Current File's Tests",
+      "type": "node",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}/2024",
+      "runtimeExecutable": "deno",
+      "runtimeArgs": ["test", "--inspect-wait"],
+      "attachSimplePort": 9229
     }
   ]
 }

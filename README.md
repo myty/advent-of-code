@@ -7,10 +7,11 @@ coursework, practice problems, a speed contest, or to challenge each other.
 
 <https://adventofcode.com/>
 
-## Getting Started
+## 2024
 
-For the pre-commit hooks to work, you will need to install Husky. An easy way to
-do that is to run `deno run -A npm:husky install`
+For 2024, I've decided to solve the puzzles in [Deno](https://deno.com/) again
+mostly because of this: <https://deno.com/blog/advent-of-code-2024>. You can
+follow along with my (work-in-progress) [solutions for 2024](./2024/).
 
 ## 2023
 

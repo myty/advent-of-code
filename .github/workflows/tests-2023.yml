@@ -1,11 +1,14 @@
-name: 2023 tests
-on: [push]
+name: 2023
+on:
+  push:
+    paths:
+      - "2023/**"
 jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: denoland/setup-deno@v1
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
         with:
           deno-version: v1.x
       - run: cd 2023 && deno fmt --check
