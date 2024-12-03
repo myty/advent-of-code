@@ -40,41 +40,26 @@ function isSafeReport({ levels }: Report): boolean {
 }
 
 function isSafeReportV2({ levels }: Report): boolean {
-  const [, ...increments] = levels.reduce((acc, curr, i) => {
-    if (i === 0) {
-      return [levels[0]];
+  if (isSafeReport({ levels })) {
+    return true;
+  }
+
+  for (let i = 0; i < levels.length; i++) {
+    const filteredLevels = [
+      ...levels.slice(0, i),
+      ...levels.slice(i + 1),
+    ];
+
+    const isSafe = isSafeReport({
+      levels: filteredLevels,
+    });
+
+    if (isSafe) {
+      return true;
     }
+  }
 
-    const prev = levels[i - 1];
-    const increment = curr - prev;
-    return [...acc, increment];
-  }, [] as number[]);
-
-  console.log(increments);
-
-  const incrementingCounts = increments.reduce((acc, curr) => {
-    return {
-      incrementing: acc.incrementing + (curr > 0 ? 1 : 0),
-      decrementing: acc.decrementing + (curr < 0 ? 1 : 0),
-    };
-  }, {
-    incrementing: 0,
-    decrementing: 0,
-  });
-
-  const isIncrementing =
-    incrementingCounts.incrementing > incrementingCounts.decrementing;
-  const incrementMultiplier: number = isIncrementing ? 1 : -1;
-  const firstBadIndex = increments.findIndex((increment) => {
-    const normalizedIncrement = increment * incrementMultiplier;
-    return normalizedIncrement < 1 || normalizedIncrement > 3;
-  });
-
-  const filteredLevels = firstBadIndex === -1
-    ? levels
-    : [...levels.slice(0, firstBadIndex), ...levels.slice(firstBadIndex + 1)];
-
-  return isSafeReport({ levels: filteredLevels });
+  return false;
 }
 
 function part1(input: string): number {
@@ -99,6 +84,7 @@ const TEST_INPUT = `\
 1 3 2 4 5
 8 6 4 4 1
 1 3 6 7 9
+1 2 3 4 9
 `;
 
 Deno.test("part1", () => {
@@ -106,5 +92,5 @@ Deno.test("part1", () => {
 });
 
 Deno.test("part2", () => {
-  assertEquals(part2(TEST_INPUT), 4);
+  assertEquals(part2(TEST_INPUT), 5);
 });
