@@ -10,6 +10,7 @@ interface Equation {
 enum Operator {
   Add = 0,
   Multiply = 1,
+  Concat = 2,
 }
 
 function parse(input: string): Equation[] {
@@ -26,7 +27,9 @@ function parse(input: string): Equation[] {
 
 function part1(input: string): number {
   const equations = parse(input).map((eq) => {
-    for (let i = 0; i <= variationCount(eq.numbers); i++) {
+    const variations = variationCount(eq.numbers);
+
+    for (let i = 0; i <= variations; i++) {
       let runningResult = 0;
       const binaryRepresentation = i.toString(2).padStart(
         eq.numbers.length,
@@ -69,19 +72,59 @@ function part1(input: string): number {
   return total;
 }
 
-function variationCount(numbers: number[]): number {
-  const variationBitmask = "1".repeat(numbers.length - 1);
-  return parseInt(variationBitmask, 2);
-}
+function part2(input: string): number {
+  const equations = parse(input).map((eq) => {
+    const radix = 3;
+    const variations = variationCount(eq.numbers, radix);
 
-// function part2(input: string): number {
-//   const items = parse(input);
-//   throw new Error("TODO");
-// }
+    for (let i = 0; i <= variations; i++) {
+      let runningResult = 0;
+      const binaryRepresentation = i.toString(radix).padStart(
+        eq.numbers.length,
+        "0",
+      );
+
+      for (let j = 0; j < eq.numbers.length; j++) {
+        const number = eq.numbers[j];
+        const operator = j === 0
+          ? Operator.Add
+          : parseInt(binaryRepresentation[j]);
+
+        if (operator === Operator.Add) {
+          runningResult += number;
+        } else if (operator === Operator.Multiply) {
+          runningResult *= number;
+        } else {
+          runningResult = parseInt(`${runningResult}${number}`);
+        }
+
+        // It's already too big, no need to continue
+        if (runningResult > eq.answer) {
+          break;
+        }
+      }
+
+      // We found a correct variation, no need to continue
+      if (runningResult === eq.answer) {
+        return { ...eq, possiblyCorrect: true };
+      }
+    }
+
+    // No correct variation found
+    return { ...eq, possiblyCorrect: false };
+  });
+
+  const total = equations.filter((eq) => eq.possiblyCorrect === true).reduce(
+    (acc, eq) => acc + eq.answer,
+    0,
+  );
+
+  return total;
+}
 
 if (import.meta.main) {
   runPart(2024, 7, 1, part1);
-  // runPart(2024, 7, 2, part2);
+  runPart(2024, 7, 2, part2);
 }
 
 const TEST_INPUT = `\
@@ -100,6 +143,14 @@ Deno.test("part1", () => {
   assertEquals(part1(TEST_INPUT), 3749);
 });
 
-// Deno.test("part2", () => {
-//   assertEquals(part2(TEST_INPUT), 12);
-// });
+Deno.test("part2", () => {
+  assertEquals(part2(TEST_INPUT), 11387);
+});
+
+function variationCount(numbers: number[], radix: 2 | 3 = 2): number {
+  const highNumber = radix === 2 ? "1" : "2";
+  const variationBitmask = highNumber.repeat(numbers.length - 1);
+  const variations = parseInt(variationBitmask, radix);
+
+  return variations;
+}
