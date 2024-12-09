@@ -7,6 +7,11 @@ interface Equation {
   possiblyCorrect?: boolean;
 }
 
+enum Operator {
+  Add = 0,
+  Multiply = 1,
+}
+
 function parse(input: string): Equation[] {
   return input.trimEnd().split("\n").map((line) => {
     const [answer, rest] = line.split(":");
@@ -20,16 +25,40 @@ function parse(input: string): Equation[] {
 }
 
 function part1(input: string): number {
-  const opertators = ["*", "+"];
   const equations = parse(input).map((eq) => {
-    let runningResult = 0;
+    for (let i = 0; i <= variationCount(eq.numbers); i++) {
+      let runningResult = 0;
+      const binaryRepresentation = i.toString(2).padStart(
+        eq.numbers.length,
+        "0",
+      );
 
-    for (let i = 0; i < eq.numbers.length - 1; i++) {
-      for (const o of opertators) {
+      for (let j = 0; j < eq.numbers.length; j++) {
+        const number = eq.numbers[j];
+        const operator = j === 0
+          ? Operator.Add
+          : parseInt(binaryRepresentation[j]);
+
+        if (operator === Operator.Add) {
+          runningResult += number;
+        } else {
+          runningResult *= number;
+        }
+
+        // It's already too big, no need to continue
+        if (runningResult > eq.answer) {
+          break;
+        }
+      }
+
+      // We found a correct variation, no need to continue
+      if (runningResult === eq.answer) {
+        return { ...eq, possiblyCorrect: true };
       }
     }
 
-    return { ...eq };
+    // No correct variation found
+    return { ...eq, possiblyCorrect: false };
   });
 
   const total = equations.filter((eq) => eq.possiblyCorrect === true).reduce(
@@ -38,6 +67,11 @@ function part1(input: string): number {
   );
 
   return total;
+}
+
+function variationCount(numbers: number[]): number {
+  const variationBitmask = "1".repeat(numbers.length - 1);
+  return parseInt(variationBitmask, 2);
 }
 
 // function part2(input: string): number {
