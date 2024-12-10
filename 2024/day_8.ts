@@ -103,9 +103,7 @@ function part2(input: string): number {
     }
   }
 
-  displayGrid(input, groupedCells);
-
-  return groupedCells["#"].length;
+  return calculateAntiNodeCount(input, groupedCells);
 }
 
 if (import.meta.main) {
@@ -132,27 +130,35 @@ Deno.test("part1", () => {
   assertEquals(part1(TEST_INPUT), 14);
 });
 
-// Deno.test("part2", () => {
-//   assertEquals(part2(TEST_INPUT), 34);
-// });
+Deno.test("part2", () => {
+  assertEquals(part2(TEST_INPUT), 34);
+});
 
-function displayGrid(input: string, groupedCells: Record<string, Cell[]>) {
-  console.log("Displaying grid");
-  console.log(input);
-
+function calculateAntiNodeCount(
+  input: string,
+  groupedCells: Record<string, Cell[]>,
+): number {
+  let total = 0;
   const lines = input.split("\n").filter(Boolean);
   for (let y = 0; y < lines.length; y++) {
-    const modifiedLine = lines[y].split("").map((char, x) => {
+    total += lines[y].split("").map((char, x) => {
       const cell = groupedCells["#"].find((cell) =>
         cell.x === x && cell.y === y && cell.char === "."
       );
+
       if (cell) {
         return "#";
       }
 
       return char;
-    });
+    }).reduce((acc, char) => {
+      if (char === ".") {
+        return acc;
+      }
 
-    console.log(modifiedLine.join(""));
+      return acc + 1;
+    }, 0);
   }
+
+  return total;
 }
