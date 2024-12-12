@@ -32,6 +32,13 @@ Deno.test("part2", () => {
   assertEquals(part2(TEST_INPUT), 65601038650482);
 });
 
+Deno.test("split", () => {
+  assertEquals(split("1234"), ["12", "34"]);
+  assertEquals(split("1234"), ["12", "34"]);
+  assertEquals(split("72"), ["7", "2"]);
+  assertEquals(split("7200"), ["72", "0"]);
+});
+
 function buildNumberMap(numbers: string[]): Map<string, number> {
   const numberMap = new Map<string, number>();
 
@@ -42,6 +49,9 @@ function buildNumberMap(numbers: string[]): Map<string, number> {
 
   return numberMap;
 }
+
+const cache = new Map<string, string[]>();
+cache.set("0", ["1"]);
 
 function recursiveCount(
   numbersMap: Map<string, number>,
@@ -64,19 +74,23 @@ function recursiveCount(
   const nextMap = createMapWrapper(new Map<string, number>());
 
   for (const [number, prevNumberCount] of entries) {
-    if (number === "0") {
-      nextMap.add("1", prevNumberCount);
+    if (cache.has(number)) {
+      for (const cachedNumber of cache.get(number)!) {
+        nextMap.add(cachedNumber, prevNumberCount);
+      }
       continue;
     }
 
     if (number.length % 2 === 0) {
       const [nextNumberOne, nextNumberTwo] = split(number);
+      cache.set(number, [nextNumberOne, nextNumberTwo]);
       nextMap.add(nextNumberOne, prevNumberCount);
       nextMap.add(nextNumberTwo, prevNumberCount);
       continue;
     }
 
     const nextNumber = `${2024 * parseInt(number)}`;
+    cache.set(number, [nextNumber]);
     nextMap.add(nextNumber, prevNumberCount);
   }
 
@@ -87,14 +101,6 @@ function createMapWrapper(map: Map<string, number>) {
   return {
     add: (number: string, count: number) => {
       map.set(number, (map.get(number) ?? 0) + count);
-    },
-    subtract: (number: string, count: number) => {
-      const currentCount = map.get(number) ?? 0;
-      if (currentCount === 0) {
-        throw new Error("Cannot subtract from 0 count");
-      }
-
-      map.set(number, currentCount - count);
     },
     toMap: () => {
       return map;
@@ -112,10 +118,3 @@ function split(number: string): [string, string] {
     `${parseInt(number.slice(number.length / 2))}`,
   ];
 }
-
-Deno.test("split", () => {
-  assertEquals(split("1234"), ["12", "34"]);
-  assertEquals(split("1234"), ["12", "34"]);
-  assertEquals(split("72"), ["7", "2"]);
-  assertEquals(split("7200"), ["72", "0"]);
-});
