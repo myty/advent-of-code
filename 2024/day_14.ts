@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { runPart } from "@macil/aocd";
-import { red } from "jsr:@std/internal@^1.0.4/styles";
+// import { red } from "jsr:@std/internal@^1.0.4/styles";
 
 type Point = [x: number, y: number];
 
@@ -97,15 +97,15 @@ Deno.test("part1", () => {
 //   assertEquals(part2(TEST_INPUT), 12);
 // });
 
-function display(robots: Robot[], gridSize: Point) {
-  const grid = Array.from(
-    { length: gridSize[1] },
-    () => Array(gridSize[0]).fill("."),
-  );
-  for (const robot of robots) {
-    const [x, y] = robot.position;
-    grid[y][x] = red("X");
-  }
+// function display(robots: Robot[], gridSize: Point) {
+//   const grid = Array.from(
+//     { length: gridSize[1] },
+//     () => Array(gridSize[0]).fill("."),
+//   );
+//   for (const robot of robots) {
+//     const [x, y] = robot.position;
+//     grid[y][x] = red("X");
+//   }
 
-  console.log(grid.map((row) => row.join("")).join("\n"));
-}
+//   console.log(grid.map((row) => row.join("")).join("\n"));
+// }
