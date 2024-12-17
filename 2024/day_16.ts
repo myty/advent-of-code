@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { runPart } from "@macil/aocd";
 
-enum CellType {
+enum Cell {
   Wall = "#",
   Empty = ".",
   Start = "S",
@@ -10,17 +10,6 @@ enum CellType {
 
 type Location = [x: number, y: number];
 type Movement = [x: number, y: number];
-
-interface Cell {
-  type: CellType;
-  location: Location;
-}
-
-interface CellWithValue {
-  location: Location;
-  direction: Movement;
-  value: number;
-}
 
 const Directions = {
   Up: [0, -1] as Movement,
@@ -35,17 +24,17 @@ interface QueueItem {
   score: number;
 }
 
-function parse(input: string): CellType[][] {
+function parse(input: string): Cell[][] {
   return input.trimEnd().split("\n").filter(Boolean).map((line) => {
     return line.split("").map((char) => {
-      return char as CellType;
+      return char as Cell;
     });
   });
 }
 
 function part1(input: string): number {
   const grid = parse(input);
-  const { evaluateLowestPathScore } = createMazeWrapper(grid);
+  const { evaluateLowestPathScore } = createMaze(grid);
   return evaluateLowestPathScore();
 }
 
@@ -109,13 +98,13 @@ Deno.test("part1b", () => {
 //   assertEquals(part2(TEST_INPUT), 12);
 // });
 
-function createMazeWrapper(grid: CellType[][]) {
-  function evaluateLowestPathScore(grid: CellType[][]): number {
+function createMaze(grid: Cell[][]) {
+  function evaluateLowestPathScore(): number {
     const [startingLocation] = grid
       .map((row, y) =>
         row
           .map((cell, x) => ({ type: cell, location: [x, y] as Location }))
-          .filter((c) => c.type === CellType.Start)
+          .filter((c) => c.type === Cell.Start)
           .map((c) => c.location)
       )
       .flat();
@@ -151,27 +140,27 @@ function createMazeWrapper(grid: CellType[][]) {
       visited.add(stateKey);
 
       // Get next possible moves
-      const nextCells = getNextAvailableCells(
+      const nextQueueItems = getNextQueueItems(
         current.location,
         current.direction,
       );
 
-      for (const nextCell of nextCells) {
-        const nextScore = current.score + nextCell.value;
+      for (const nextQueueItem of nextQueueItems) {
+        const nextScore = current.score + nextQueueItem.score;
 
         // Skip if score is already worse than best found
         if (nextScore >= lowestScore) continue;
 
         // If we reached destination, update lowest score
-        if (isDestination(nextCell.location)) {
+        if (isDestination(nextQueueItem.location)) {
           lowestScore = Math.min(lowestScore, nextScore);
           continue;
         }
 
         // Add next possible path to queue
         queue.push({
-          location: nextCell.location,
-          direction: nextCell.direction,
+          location: nextQueueItem.location,
+          direction: nextQueueItem.direction,
           score: nextScore,
         });
       }
@@ -181,10 +170,10 @@ function createMazeWrapper(grid: CellType[][]) {
   }
 
   function isDestination(cell: Location): boolean {
-    return grid[cell[1]][cell[0]] === CellType.End;
+    return grid[cell[1]][cell[0]] === Cell.End;
   }
 
-  function getCellType(location: Location, direction?: Movement): CellType {
+  function getCellType(location: Location, direction?: Movement): Cell {
     if (direction == null) {
       return grid[location[1]][location[0]];
     }
@@ -203,11 +192,11 @@ function createMazeWrapper(grid: CellType[][]) {
     return direction1[0] === direction2[0] && direction1[1] === direction2[1];
   }
 
-  function getNextAvailableCells(
+  function getNextQueueItems(
     currentLocation: Location,
     currentDirection: Movement,
-  ): CellWithValue[] {
-    const availableCells: CellWithValue[] = [];
+  ): QueueItem[] {
+    const availableCells: QueueItem[] = [];
 
     for (const direction of Object.values(Directions)) {
       if (
@@ -243,21 +232,21 @@ function createMazeWrapper(grid: CellType[][]) {
         currentLocation[1] + direction[1],
       ] as Location;
 
-      if (getCellType(nextLocation) === CellType.Wall) {
+      if (getCellType(nextLocation) === Cell.Wall) {
         continue;
       }
 
       availableCells.push({
         location: nextLocation,
         direction,
-        value: getCellValue(direction, currentDirection),
+        score: getMovementScore(direction, currentDirection),
       });
     }
 
     return availableCells;
   }
 
-  function getCellValue(
+  function getMovementScore(
     direction: Movement,
     currentDirection: Movement,
   ): number {
@@ -269,8 +258,6 @@ function createMazeWrapper(grid: CellType[][]) {
   }
 
   return {
-    evaluateLowestPathScore() {
-      return evaluateLowestPathScore(grid);
-    },
+    evaluateLowestPathScore,
   };
 }
