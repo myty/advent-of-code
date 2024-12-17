@@ -37,71 +37,22 @@ function parse(input: string) {
 }
 
 function part1(input: string): number {
-  let totalTokens = 0;
-
-  for (const clawMachine of parse(input)) {
-    const { buttonA, buttonB, prizeLocation } = clawMachine;
-
-    const maxButtonAPresses = calculateMaxButtonPresses(
-      prizeLocation,
-      buttonA,
-    );
-    const maxButtonBPresses = calculateMaxButtonPresses(
-      prizeLocation,
-      buttonB,
-    );
-
-    for (let a = 0; a < maxButtonAPresses; a++) {
-      const tokens = pressButtonB(
-        maxButtonBPresses,
-        a,
-        buttonA,
-        buttonB,
-        prizeLocation,
-      );
-
-      if (tokens > 0) {
-        totalTokens += tokens;
-        break;
-      }
-    }
-  }
-
-  return totalTokens;
+  const clawMachines = parse(input);
+  return calculateTotalTokens(clawMachines);
 }
 
 function part2(input: string): number {
-  let totalTokens = 0;
+  const clawMachines = parse(input).map((clawMachine) => {
+    return {
+      ...clawMachine,
+      prizeLocation: {
+        x: clawMachine.prizeLocation.x + 10000000000000,
+        y: clawMachine.prizeLocation.y + 10000000000000,
+      },
+    };
+  });
 
-  for (const clawMachine of parse(input)) {
-    const { buttonA, buttonB, prizeLocation } = clawMachine;
-
-    const maxButtonAPresses = calculateMaxButtonPresses(
-      prizeLocation,
-      buttonA,
-    );
-    const maxButtonBPresses = calculateMaxButtonPresses(
-      prizeLocation,
-      buttonB,
-    );
-
-    for (let a = 0; a < maxButtonAPresses; a++) {
-      const tokens = pressButtonB(
-        maxButtonBPresses,
-        a,
-        buttonA,
-        buttonB,
-        prizeLocation,
-      );
-
-      if (tokens) {
-        totalTokens += tokens;
-        break;
-      }
-    }
-  }
-
-  return totalTokens;
+  return calculateTotalTokens(clawMachines);
 }
 
 if (import.meta.main) {
@@ -165,6 +116,7 @@ function extractPrizeLocation(input: string) {
     const [_, value] = m.split("=");
     return parseInt(value);
   });
+
   return { x, y };
 }
 
@@ -220,4 +172,39 @@ function midPoint(range: [number, number]) {
   }
 
   return range[0] + Math.round((range[1] - range[0]) / 2);
+}
+
+function calculateTotalTokens(clawMachines: ClawMachine[]): number {
+  let totalTokens = 0;
+
+  for (const clawMachine of clawMachines) {
+    const { buttonA, buttonB, prizeLocation } = clawMachine;
+
+    const maxButtonAPresses = calculateMaxButtonPresses(
+      prizeLocation,
+      buttonA,
+    );
+
+    const maxButtonBPresses = calculateMaxButtonPresses(
+      prizeLocation,
+      buttonB,
+    );
+
+    for (let a = 0; a < maxButtonAPresses; a++) {
+      const tokens = pressButtonB(
+        maxButtonBPresses,
+        a,
+        buttonA,
+        buttonB,
+        prizeLocation,
+      );
+
+      if (tokens > 0) {
+        totalTokens += tokens;
+        break;
+      }
+    }
+  }
+
+  return totalTokens;
 }
