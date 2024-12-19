@@ -6,6 +6,7 @@ enum Cell {
   Empty = ".",
   Start = "S",
   End = "E",
+  Seat = "O",
 }
 
 type Location = [x: number, y: number];
@@ -22,6 +23,7 @@ interface QueueItem {
   location: Location;
   direction: Movement;
   score: number;
+  cells: Set<string>;
 }
 
 function parse(input: string): Cell[][] {
@@ -38,14 +40,15 @@ function part1(input: string): number {
   return evaluateLowestPathScore();
 }
 
-// function part2(input: string): number {
-//   const items = parse(input);
-//   throw new Error("TODO");
-// }
+function part2(input: string): number {
+  const grid = parse(input);
+  const { identifyBestCells } = createMaze(grid);
+  return identifyBestCells().length;
+}
 
 if (import.meta.main) {
   runPart(2024, 16, 1, part1);
-  // runPart(2024, 16, 2, part2);
+  runPart(2024, 16, 2, part2);
 }
 
 const TEST_INPUT = `\
@@ -86,16 +89,20 @@ const TEST_INPUT_2 = `\
 #################
 `;
 
-Deno.test("part1a", () => {
-  assertEquals(part1(TEST_INPUT), 7036);
+// Deno.test("part1a", () => {
+//   assertEquals(part1(TEST_INPUT), 7036);
+// });
+
+// Deno.test("part1b", () => {
+//   assertEquals(part1(TEST_INPUT_2), 11048);
+// });
+
+Deno.test("part2a", () => {
+  assertEquals(part2(TEST_INPUT), 45);
 });
 
-Deno.test("part1b", () => {
-  assertEquals(part1(TEST_INPUT_2), 11048);
-});
-
-// Deno.test("part2", () => {
-//   assertEquals(part2(TEST_INPUT), 12);
+// Deno.test("part2b", () => {
+//   assertEquals(part2(TEST_INPUT_2), 64);
 // });
 
 function createMaze(grid: Cell[][]) {
@@ -123,6 +130,7 @@ function createMaze(grid: Cell[][]) {
       location: startingLocation,
       direction: Directions.Right,
       score: 0,
+      cells: new Set<string>(),
     });
 
     while (queue.length > 0) {
@@ -153,7 +161,7 @@ function createMaze(grid: Cell[][]) {
 
         // If we reached destination, update lowest score
         if (isDestination(nextQueueItem.location)) {
-          lowestScore = Math.min(lowestScore, nextScore);
+          lowestScore = nextScore;
           continue;
         }
 
@@ -162,6 +170,7 @@ function createMaze(grid: Cell[][]) {
           location: nextQueueItem.location,
           direction: nextQueueItem.direction,
           score: nextScore,
+          cells: new Set<string>(),
         });
       }
     }
@@ -240,6 +249,7 @@ function createMaze(grid: Cell[][]) {
         location: nextLocation,
         direction,
         score: getMovementScore(direction, currentDirection),
+        cells: new Set<string>(),
       });
     }
 
@@ -257,7 +267,167 @@ function createMaze(grid: Cell[][]) {
     return 1001;
   }
 
+  function identifyBestCells(showBestCellsOnGrid = false): string[] {
+    const [startingLocation] = grid
+      .map((row, y) =>
+        row
+          .map((cell, x) => ({ type: cell, location: [x, y] as Location }))
+          .filter((c) => c.type === Cell.Start)
+          .map((c) => c.location)
+      )
+      .flat();
+
+    // Priority queue to store paths (can use array + sort for simplicity)
+    const queue: QueueItem[] = [];
+
+    // Track visited states to avoid cycles
+    const visited = new Map<
+      string,
+      { type: Cell; score: number; cells: Set<string> }
+    >();
+
+    // Track lowest score found
+    let lowestScore = Infinity;
+
+    // Add initial state
+    queue.push({
+      location: startingLocation,
+      direction: Directions.Right,
+      score: 0,
+      cells: new Set<string>([startingLocation.join(",")]),
+    });
+
+    while (queue.length > 0) {
+      // Get path with lowest current score
+      queue.sort((a, b) => a.score - b.score);
+      const current = queue.shift()!;
+
+      // Create unique key for this state
+      const stateKey = `${current.location},${current.direction}`;
+
+      // Skip if we've seen this state with a better score
+      if (visited.has(stateKey)) {
+        const { cells, score } = visited.get(stateKey)!;
+
+        if (current.score > score) {
+          continue;
+        }
+
+        if (current.score < score) {
+          cells.clear();
+        }
+
+        current.cells.forEach((cell) => cells.add(cell));
+
+        visited.set(stateKey, {
+          type: Cell.Empty,
+          score: current.score,
+          cells,
+        });
+        continue;
+      }
+
+      visited.set(stateKey, {
+        score: current.score,
+        cells: new Set(current.cells),
+        type: Cell.Empty,
+      });
+
+      // Get next possible moves
+      const nextQueueItems = getNextQueueItems(
+        current.location,
+        current.direction,
+      );
+
+      for (const nextQueueItem of nextQueueItems) {
+        const nextScore = current.score + nextQueueItem.score;
+        const nextCellSet = new Set([
+          ...current.cells,
+          nextQueueItem.location.join(","),
+        ]);
+
+        if (nextScore > lowestScore) {
+          continue;
+        }
+
+        // If we reached destination, update lowest score
+        if (isDestination(nextQueueItem.location)) {
+          const destinationKey =
+            `${nextQueueItem.location},${nextQueueItem.direction}`;
+
+          const { cells } = visited.get(destinationKey) ?? {
+            type: Cell.End,
+            score: nextScore,
+            cells: new Set<string>(),
+          };
+
+          lowestScore = nextScore;
+
+          if (nextScore < lowestScore) {
+            cells.clear();
+          }
+
+          nextCellSet.forEach((cell) => cells.add(cell));
+
+          visited.set(destinationKey, {
+            type: Cell.End,
+            score: nextScore,
+            cells,
+          });
+
+          continue;
+        }
+
+        // Add next possible path to queue
+        queue.push({
+          location: nextQueueItem.location,
+          direction: nextQueueItem.direction,
+          score: nextScore,
+          cells: nextCellSet,
+        });
+      }
+    }
+
+    const destinationCellScores = Array
+      .from(visited.values().filter((v) => v.type === Cell.End))
+      .sort((a, b) => a.score - b.score);
+
+    const bestScore = Math.min(...destinationCellScores.map((v) => v.score));
+
+    const bestPathCells = destinationCellScores
+      .filter((v) => v.score === bestScore)
+      .map((v) => v.cells)
+      .reduce((acc, curr) => {
+        curr.forEach((cell) => acc.add(cell));
+        return acc;
+      }, new Set<string>());
+
+    const bestCellsArray = Array.from(bestPathCells);
+
+    if (showBestCellsOnGrid) {
+      displayBestCellsOnGrid(bestCellsArray);
+    }
+
+    return bestCellsArray;
+  }
+
+  function displayBestCellsOnGrid(bestCells: string[]): void {
+    const gridCopy = grid.map((row) => [...row]);
+
+    for (const cell of bestCells) {
+      try {
+        const [x, y] = cell.split(",").map(Number);
+        gridCopy[y][x] = Cell.Seat;
+      } catch {
+        console.log(cell);
+      }
+    }
+
+    console.log(gridCopy.map((row) => row.join("")).join("\n"));
+  }
+
   return {
     evaluateLowestPathScore,
+    identifyBestCells,
   };
 }
