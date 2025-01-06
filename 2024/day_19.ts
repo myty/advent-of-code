@@ -8,7 +8,7 @@ interface Towels {
 
 interface QueueItem {
   index: number;
-  combination: string;
+  combination: string[];
 }
 
 function parse(input: string): Towels {
@@ -66,21 +66,25 @@ Deno.test("part1", () => {
   assertEquals(part1(TEST_INPUT), 6);
 });
 
-// Deno.test("part2", () => {
-//   assertEquals(part2(TEST_INPUT), 16);
-// });
+Deno.test("part2", () => {
+  assertEquals(part2(TEST_INPUT), 16);
+});
 
 function createTowelDesignMap(
   { patterns, designs }: Towels,
 ): Map<string, Set<string>> {
   const possibleDesigns = new Map<string, Set<string>>();
+  const badDesigns = new Set<string>();
 
   for (const design of designs) {
-    const visitedDesigns = new Set<string>();
+    const addDesignCombination = createdesignCombinationThunk(
+      possibleDesigns,
+      design,
+    );
 
     const designQueue: QueueItem[] = [{
       index: 0,
-      combination: "",
+      combination: [],
     }];
 
     while (designQueue.length > 0) {
@@ -89,24 +93,24 @@ function createTowelDesignMap(
       const queuedItem = designQueue.shift()!;
       const queuedDesign = design.slice(queuedItem.index);
 
-      if (visitedDesigns.has(queuedDesign)) {
+      if (badDesigns.has(queuedDesign)) {
         continue;
       }
 
-      visitedDesigns.add(queuedDesign);
-
       const matchedPatterns = [
         ...patterns
-          .filter((pattern) => queuedDesign.startsWith(pattern))
-          .sort((a, b) => b.length - a.length),
+          .filter((pattern) => queuedDesign.startsWith(pattern)),
       ];
+
+      if (matchedPatterns.length === 0) {
+        badDesigns.add(queuedDesign);
+        continue;
+      }
 
       for (const pattern of matchedPatterns) {
         const nextQueuedItem: QueueItem = {
           index: queuedItem.index + pattern.length,
-          combination: [...queuedItem.combination.split(","), pattern].join(
-            ",",
-          ),
+          combination: [...queuedItem.combination, pattern],
         };
 
         if (nextQueuedItem.index < design.length) {
@@ -114,11 +118,7 @@ function createTowelDesignMap(
           continue;
         }
 
-        mergeDesignCombinations(
-          design,
-          possibleDesigns,
-          nextQueuedItem.combination,
-        );
+        addDesignCombination(nextQueuedItem.combination);
       }
     }
   }
@@ -126,12 +126,15 @@ function createTowelDesignMap(
   return possibleDesigns;
 }
 
-function mergeDesignCombinations(
-  design: string,
+function createdesignCombinationThunk(
   possibleDesigns: Map<string, Set<string>>,
-  combination: string,
-): void {
-  const designCombinations = possibleDesigns.get(design) ?? new Set<string>();
-  possibleDesigns.set(design, designCombinations);
-  designCombinations.add(combination);
+  design: string,
+) {
+  return function addCombination(
+    combination: string[],
+  ): void {
+    const designCombinations = possibleDesigns.get(design) ?? new Set<string>();
+    possibleDesigns.set(design, designCombinations);
+    designCombinations.add(combination.join(","));
+  };
 }
