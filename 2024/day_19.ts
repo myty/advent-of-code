@@ -75,9 +75,10 @@ function createTowelDesignMap(
 ): Map<string, Set<string>> {
   const possibleDesigns = new Map<string, Set<string>>();
   const badDesigns = new Set<string>();
+  const queuedDesignPatternCache = new Map<string, string[]>();
 
   for (const design of designs) {
-    const addDesignCombination = createdesignCombinationThunk(
+    const addDesignCombination = createDesignCombinationThunk(
       possibleDesigns,
       design,
     );
@@ -97,18 +98,23 @@ function createTowelDesignMap(
         continue;
       }
 
-      const matchedPatterns = [
-        ...patterns
-          .filter((pattern) => queuedDesign.startsWith(pattern)),
-      ];
+      const nextPatterns = queuedDesignPatternCache.get(queuedDesign) ??
+        (function () {
+          const foundPatterns = patterns
+            .filter((pattern) => queuedDesign.startsWith(pattern));
 
-      if (matchedPatterns.length === 0) {
+          queuedDesignPatternCache.set(queuedDesign, foundPatterns);
+
+          return foundPatterns;
+        })();
+
+      if (nextPatterns.length === 0) {
         badDesigns.add(queuedDesign);
         continue;
       }
 
-      for (const pattern of matchedPatterns) {
-        const nextQueuedItem: QueueItem = {
+      for (const pattern of nextPatterns) {
+        const nextQueuedItem = {
           index: queuedItem.index + pattern.length,
           combination: [...queuedItem.combination, pattern],
         };
@@ -126,7 +132,7 @@ function createTowelDesignMap(
   return possibleDesigns;
 }
 
-function createdesignCombinationThunk(
+function createDesignCombinationThunk(
   possibleDesigns: Map<string, Set<string>>,
   design: string,
 ) {
