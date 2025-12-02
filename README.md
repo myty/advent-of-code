@@ -16,6 +16,7 @@ For 2025, I've decided to solve the puzzles in [Go](https://go.dev/). It's a lan
 To run the puzzles, you can use the following command:
 
 ```sh
+cd 2025
 go run ./<day><number>
 ```
 
