@@ -7,6 +7,18 @@ coursework, practice problems, a speed contest, or to challenge each other.
 
 <https://adventofcode.com/>
 
+I'm using [Mise](https://mise.jdx.dev/) to manage my development environment.
+
+## 2025
+
+For 2025, I've decided to solve the puzzles in [Go](https://go.dev/). It's a language that I've been trying to learn and what a better way to learn a new language than to solve puzzles with it?
+
+To run the puzzles, you can use the following command:
+
+```sh
+go run ./<day><number>
+```
+
 ## 2024
 
 For 2024, I've decided to solve the puzzles in [Deno](https://deno.com/) again
