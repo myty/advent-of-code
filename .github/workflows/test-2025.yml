@@ -1,0 +1,26 @@
+name: "2025"
+on:
+  push:
+    paths:
+      - "2025/**"
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout your code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install Go
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23" # use your Go version
+
+      # Download dependencies
+      - name: Install dependencies
+        run: cd 2025 && go mod tidy
+
+      # Run all tests recursively
+      - name: Run tests
+        run: cd 2025 && go test -v ./...

@@ -8,23 +8,18 @@ import (
 )
 
 func main() {
-	lines, errs := utils.StreamFileLines("day01/input")
+	submissionOneResult := RunPartOne("day01/input")
+	fmt.Println("Day 1 - First submission result:", submissionOneResult)
 
-	// count := RunPartOne(lines)
-	// fmt.Println("Day 1 result:", count)
-
-	count := RunPartTwo(lines)
-	fmt.Println("Day 2 result:", count)
-
-	if err := <-errs; err != nil {
-		fmt.Println("Error:", err)
-	}
-
+	submissionTwoResult := RunPartTwo("day01/input")
+	fmt.Println("Day 1 - Second submission result:", submissionTwoResult)
 }
 
-func RunPartOne(lines <-chan string) int {
+func RunPartOne(path string) int {
 	count := 0
 	sum := 50
+
+	lines, errs := utils.StreamFileLines(path)
 
 	for line := range lines {
 		var sign string
@@ -34,16 +29,11 @@ func RunPartOne(lines <-chan string) int {
 			sign = "-"
 		}
 
-		var start int
-		if len(line) > 3 {
-			start = len(line) - 2
-		} else {
-			start = 1
-		}
+		startingIndex := getStartingIndex(line)
+		n, err := strconv.Atoi(line[startingIndex:])
 
-		n, err := strconv.Atoi(line[start:])
 		if err != nil {
-			fmt.Println("Parse error:", err, start, line)
+			fmt.Println("Parse error:", err, startingIndex, line)
 			continue
 		}
 
@@ -61,42 +51,48 @@ func RunPartOne(lines <-chan string) int {
 			sum = sum + 100
 		}
 
-		fmt.Println("Current sum:", sum, line)
-
 		if sum == 0 {
 			count++
 		}
 	}
 
+	if err := <-errs; err != nil {
+		fmt.Println("Error:", err)
+	}
+
 	return count
 }
 
-func RunPartTwo(lines <-chan string) int {
+func getStartingIndex(line string) int {
+	if len(line) > 3 {
+		return len(line) - 2
+	}
+
+	return 1
+}
+
+func RunPartTwo(path string) int {
 	count := 0
 	sum := 50
+
+	lines, errs := utils.StreamFileLines(path)
 
 	for line := range lines {
 		startingSum := sum
 		direction := string(line[0])
-
-		var start int
 		passedZeroCount := 0
-		if len(line) > 3 {
-			start = len(line) - 2
-		} else {
-			start = 1
-		}
+		startingIndex := getStartingIndex(line)
+		n, err := strconv.Atoi(line[startingIndex:])
 
-		n, err := strconv.Atoi(line[start:])
 		if err != nil {
-			fmt.Println("Parse error:", err, start, line)
+			fmt.Println("Parse error:", err, startingIndex, line)
 			continue
 		}
 
-		if start > 1 {
-			passedZeroCount, err = strconv.Atoi(line[1:start])
+		if startingIndex > 1 {
+			passedZeroCount, err = strconv.Atoi(line[1:startingIndex])
 			if err != nil {
-				fmt.Println("Parse error:", err, start, line)
+				fmt.Println("Parse error:", err, startingIndex, line)
 				continue
 			}
 		}
@@ -125,8 +121,10 @@ func RunPartTwo(lines <-chan string) int {
 			sum = 0
 			count++
 		}
+	}
 
-		fmt.Println("Current sum:", startingSum, line, sum, count, passedZeroCount)
+	if err := <-errs; err != nil {
+		fmt.Println("Error:", err)
 	}
 
 	return count

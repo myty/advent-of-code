@@ -1,4 +1,4 @@
-name: 2024
+name: "2024"
 on:
   push:
     paths:
