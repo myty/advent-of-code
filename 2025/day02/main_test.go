@@ -13,7 +13,7 @@ func TestPartOne(t *testing.T) {
 
 func TestPartTwo(t *testing.T) {
 	got := RunPartTwo("test_input")
-	want := 1227775554
+	want := 4174379265
 
 	if got != want {
 		t.Errorf("got %q want %q", got, want)
