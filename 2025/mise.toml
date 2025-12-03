@@ -1,3 +1,7 @@
 [tools]
 go = "latest"
 "go:golang.org/x/tools/gopls" = "latest"
+
+[tasks.test]
+description = "Run all 2025 tests"
+run = "go test -v ./..."

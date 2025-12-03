@@ -9,10 +9,10 @@ import (
 )
 
 func main() {
-	// submissionOneResult := RunPartOne("day02/input")
-	// fmt.Println("Day 2 - First submission result:", submissionOneResult)
+	submissionOneResult := RunPartOne("day02/input")
+	fmt.Println("Day 2 - First submission result:", submissionOneResult)
 
-	submissionTwoResult := RunPartTwo("day02/test_input")
+	submissionTwoResult := RunPartTwo("day02/input")
 	fmt.Println("Day 2 - Second submission result:", submissionTwoResult)
 }
 
@@ -69,24 +69,27 @@ func RunPartTwo(path string) int {
 				currentLength := len(current)
 
 				for groupCount := 2; groupCount <= currentLength; groupCount++ {
+					if currentLength%groupCount != 0 {
+						continue
+					}
+
 					size := currentLength / groupCount
 					start := 0
 					compare := current[start:size]
 					matchFound := false
 
-					for start += size; start+size <= currentLength; start += size {
-						if compare != current[start:size] {
+					for start += size; start < currentLength; start += size {
+						compareNext := current[start : start+size]
+
+						if compare != compareNext {
+							matchFound = false
 							break
 						}
 
-						if start+size == currentLength {
-							matchFound = true
-							break
-						}
+						matchFound = true
 					}
 
 					if matchFound {
-						fmt.Println("matchFound")
 						total += i
 						break
 					}
