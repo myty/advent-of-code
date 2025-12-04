@@ -16,65 +16,15 @@ func main() {
 	fmt.Println("Day 3 - Second submission result:", submissionTwoResult)
 }
 
-func RunPartOne(path string) int {
-	total := 0
-	lines, errs := utils.StreamFileLines(path)
-
-	for line := range lines {
-		var digits []int
-
-		for _, ch := range line {
-			num, err := strconv.Atoi(string(ch))
-			if err != nil {
-				fmt.Println("Error:", err)
-				break
-			}
-			digits = append(digits, num)
-		}
-
-		if len(digits) == 0 {
-			break
-		}
-
-		firstIndex := 0
-		secondIndex := len(digits) - 1
-
-		// Determine the first digit
-		for i := firstIndex; i < secondIndex; i++ {
-
-			if digits[i] == 9 || digits[firstIndex] < digits[i] {
-				firstIndex = i
-			}
-
-			if digits[i] == 9 {
-				break
-			}
-		}
-
-		// Determine the second digit
-		for i := secondIndex; i > firstIndex; i-- {
-			if digits[i] == 9 || digits[secondIndex] < digits[i] {
-				secondIndex = i
-			}
-
-			if digits[i] == 9 {
-				break
-			}
-		}
-
-		total += digits[firstIndex] * 10
-		total += digits[secondIndex]
-	}
-
-	if err := <-errs; err != nil {
-		fmt.Println("Error:", err)
-	}
-
-	return total
+func RunPartOne(path string) int64 {
+	return run(path, 2)
 }
 
 func RunPartTwo(path string) int64 {
-	indexSize := 12
+	return run(path, 12)
+}
+
+func run(path string, indexSize int) int64 {
 	total := int64(0)
 	lines, errs := utils.StreamFileLines(path)
 
