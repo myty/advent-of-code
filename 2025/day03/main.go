@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 
 	"aoc/2025/utils"
@@ -72,8 +73,9 @@ func RunPartOne(path string) int {
 	return total
 }
 
-func RunPartTwo(path string) int {
-	total := 0
+func RunPartTwo(path string) int64 {
+	indexSize := 12
+	total := int64(0)
 	lines, errs := utils.StreamFileLines(path)
 
 	for line := range lines {
@@ -92,53 +94,27 @@ func RunPartTwo(path string) int {
 			break
 		}
 
-		indexSize := 12
-		indexes := make([]int, indexSize)
+		startingIndex := 0
 
 		for i := range indexSize {
-			indexBoundary := len(digits) - indexSize - indexes[i]
-			index := indexes[i]
+			indexBoundary := startingIndex + ((len(digits) - startingIndex) - (indexSize - i)) + 1
+			index := startingIndex
 
-			for j := index + 1; j < indexBoundary; j++ {
+			for j := startingIndex; j < indexBoundary; j++ {
 				digit := digits[j]
 
 				if digit == 9 || digits[index] < digit {
-					indexes[i] = j
+					index = j
 				}
 
 				if digits[j] == 9 {
 					break
 				}
 			}
+
+			startingIndex = index + 1
+			total += int64(digits[index]) * int64(math.Pow(10, float64(indexSize-i-1)))
 		}
-
-		firstIndex := 0
-		secondIndex := len(digits) - 1
-
-		// Determine the first digit
-		for i := firstIndex; i < secondIndex; i++ {
-			if digits[i] == 9 || digits[firstIndex] < digits[i] {
-				firstIndex = i
-			}
-
-			if digits[i] == 9 {
-				break
-			}
-		}
-
-		// Determine the second digit
-		for i := secondIndex; i > firstIndex; i-- {
-			if digits[i] == 9 || digits[secondIndex] < digits[i] {
-				secondIndex = i
-			}
-
-			if digits[i] == 9 {
-				break
-			}
-		}
-
-		total += digits[firstIndex] * 10
-		total += digits[secondIndex]
 	}
 
 	if err := <-errs; err != nil {
