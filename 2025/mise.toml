@@ -5,4 +5,8 @@ go = "latest"
 
 [tasks.test]
 description = "Run all 2025 tests"
+run = "gotestsum --format pkgname"
+
+[tasks."test:watch"]
+description = "Run all 2025 tests"
 run = "gotestsum --format pkgname --watch"
