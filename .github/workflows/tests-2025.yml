@@ -15,12 +15,22 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23" # use your Go version
+          go-version: "1.25" # use your Go version
 
       # Download dependencies
       - name: Install dependencies
         run: cd 2025 && go mod tidy
 
-      # Run all tests recursively
-      - name: Run tests
-        run: cd 2025 && go test -v ./...
+      - name: Setup gotestsum
+        uses: autero1/action-gotestsum@v2.0.0
+        with:
+          gotestsum_version: 1.13.0
+
+      - name: Run tests with gotestsum
+        run: cd 2025 && gotestsum --format short-verbose --junitfile unit-tests.xml ./...
+
+      - name: Upload test summary
+        uses: test-summary/action@v2
+        if: always()
+        with:
+          paths: "./2025/unit-tests.xml"
