@@ -12,9 +12,8 @@ func TestPartOne(t *testing.T) {
 }
 
 func TestPartTwo(t *testing.T) {
-	t.Skip("Skip Template Test. Delete when ready to test.")
-	got := RunPartTwo("test_input")
-	want := -1
+	got := RunPartTwo("test_input", 3)
+	want := 3263827
 
 	if got != want {
 		t.Errorf("got %d want %d", got, want)
