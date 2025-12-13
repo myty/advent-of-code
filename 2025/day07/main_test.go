@@ -12,7 +12,6 @@ func TestPartOne(t *testing.T) {
 }
 
 func TestPartTwo(t *testing.T) {
-	t.Skip("Incomplete part 2 test")
 	got := RunPartTwo("test_input")
 	want := 40
 
