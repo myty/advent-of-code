@@ -115,17 +115,84 @@ func RunPartOne(path string, top int) int {
 
 func RunPartTwo(path string) int {
 	lines, errs := utils.StreamFileLines(path)
+	points := []JunctionBox{}
+	pairs := []JunctionBoxPair{}
+	circuits := []Circuit{}
 
 	// Parse lines
 	for line := range lines {
-		fmt.Println(line)
+		dimensions := strings.Split(line, ",")
+		x, _ := strconv.Atoi(dimensions[0])
+		y, _ := strconv.Atoi(dimensions[1])
+		z, _ := strconv.Atoi(dimensions[2])
+
+		points = append(points, JunctionBox{
+			X: x,
+			Y: y,
+			Z: z,
+		})
 	}
+
+	// Compare
+	for a := 0; a < len(points); a++ {
+		for b := a + 1; b < len(points); b++ {
+			pairs = append(pairs, JunctionBoxPair{
+				BoxA:     points[a],
+				BoxB:     points[b],
+				Distance: calculateEuclideanDistance(points[a], points[b]),
+			})
+		}
+	}
+
+	// Sort
+	slices.SortFunc(pairs, func(a, b JunctionBoxPair) int {
+		return cmp.Compare(a.Distance, b.Distance)
+	})
+
+	var lastPair JunctionBoxPair
+
+	for i := range len(pairs) {
+		pair := pairs[i]
+
+		circuitIndexA, foundA := findCircuitIndex(circuits, pair.BoxA)
+		circuitIndexB, foundB := findCircuitIndex(circuits, pair.BoxB)
+
+		if foundA && foundB && circuitIndexA == circuitIndexB {
+			continue
+		}
+
+		lastPair = pair
+
+		if foundA && foundB {
+			circuits = mergeCircuits(circuits, circuitIndexA, circuitIndexB)
+			continue
+		}
+
+		if !foundA && !foundB {
+			circuits = append(circuits, Circuit{
+				Boxes: []JunctionBox{pair.BoxA, pair.BoxB},
+			})
+			continue
+		}
+
+		if foundA {
+			circuits[circuitIndexA].Boxes = append(circuits[circuitIndexA].Boxes, pair.BoxB)
+			continue
+		}
+
+		circuits[circuitIndexB].Boxes = append(circuits[circuitIndexB].Boxes, pair.BoxA)
+	}
+
+	// Final sort
+	slices.SortFunc(circuits, func(a, b Circuit) int {
+		return cmp.Compare(len(b.Boxes), len(a.Boxes))
+	})
 
 	if err := <-errs; err != nil {
 		fmt.Println("Error:", err)
 	}
 
-	return 0
+	return lastPair.BoxA.X * lastPair.BoxB.X
 }
 
 func mergeCircuits(circuits []Circuit, circuitIndexA, circuitIndexB int) []Circuit {

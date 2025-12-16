@@ -8,5 +8,10 @@
   },
   "features": {
     "edit_prediction_provider": "none"
+  },
+  "languages": {
+    "Markdown": {
+      "enable_language_server": false
+    }
   }
 }
